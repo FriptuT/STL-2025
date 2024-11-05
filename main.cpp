@@ -1,33 +1,76 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <algorithm>
+using namespace std;
 
 using namespace std;
+
+class Problem
+{
+public:
+    string id;
+    string speciality;
+};
+
+class Doctor
+{
+public:
+    string id;
+    string speciality;
+};
+
+vector<Problem> problems;
+vector<Doctor> doctors;
+
+void solution1()
+{
+
+    for (const auto& doctor : doctors)
+    {
+        auto probl = find_if(problems.begin(), problems.end(), [doctor](const Problem& problem) {
+            return doctor.speciality == problem.speciality;
+            });
+        if (probl != problems.end()) {
+            cout << probl->id << " Acceptat" << endl;
+        }
+        else
+        {
+            cout << probl->id << " Respins" << endl;
+        }
+    }
+}
 
 int main()
 {
     ifstream inFile("input.txt");
 
-    int no_problems, no_doctors;
-    string name, speciality;
-    
-    inFile >> no_problems;
 
-    for (int i = 0; i < no_problems; i++)
+    int sizeProblems = problems.size();
+    inFile >> sizeProblems;
+
+    for (int i = 0; i < sizeProblems; i++)
     {
-        inFile >> name;
-        inFile >> speciality;
-        cout << name << ' ' << speciality << '\n';
+        string name;
+        string speciality;
+        inFile >> name >> speciality;
+        problems.push_back({ name, speciality });
     }
 
-    inFile >> no_doctors;
+    cout << "===" << endl;
+    int sizeDoctors = doctors.size();
+    inFile >> sizeDoctors;
 
-    for (int i = 0; i < no_doctors; i++)
+    for (int i = 0; i < sizeDoctors; i++)
     {
-        inFile >> name;
-        inFile >> speciality;
-        cout << name << ' ' << speciality << '\n';
+        string name;
+        string speciality;
+        inFile >> name >> speciality;
+        doctors.push_back({ name,speciality });
     }
+
+    solution1();
 
     return 0;
 }
