@@ -12,6 +12,7 @@ class Problem
 public:
     string id;
     string speciality;
+    int duration;
 };
 
 class Doctor
@@ -19,6 +20,7 @@ class Doctor
 public:
     string id;
     string speciality;
+    int timeForProblems;
 };
 
 vector<Problem> problems;
@@ -26,48 +28,62 @@ vector<Doctor> doctors;
 
 void solution1()
 {
-
+    vector<bool> resolved(problems.size(), false);
     for (const auto& doctor : doctors)
     {
-        auto probl = find_if(problems.begin(), problems.end(), [doctor](const Problem& problem) {
-            return doctor.speciality == problem.speciality;
+        int problemCount = 0;
+        int doctorTime = doctor.timeForProblems;
+        vector<Problem> problemeRezolvate;
+
+        for_each(problems.begin(), problems.end(), [&](const Problem& problem)
+            {
+                auto index = &problem - &problems[0];
+                if (!resolved[index] && problem.speciality == doctor.speciality && problem.duration <= doctorTime)
+                {
+                    doctorTime -= problem.duration;
+                    problemCount++;
+                    problemeRezolvate.push_back(problem);
+                    resolved[index] = true;
+                }
             });
-        if (probl != problems.end()) {
-            cout << probl->id << " Acceptat" << endl;
-        }
-        else
+
+
+        cout << doctor.id << " " << problemCount << " ";
+        for (auto& rezolvata : problemeRezolvate)
         {
-            cout << probl->id << " Respins" << endl;
+            cout << rezolvata.id << " ";
         }
+        cout << endl;
     }
 }
 
 int main()
 {
-    ifstream inFile("input.txt");
+    ifstream inFile("input4_bonus.txt");
 
-
-    int sizeProblems = problems.size();
+    int sizeProblems;
     inFile >> sizeProblems;
 
     for (int i = 0; i < sizeProblems; i++)
     {
         string name;
         string speciality;
-        inFile >> name >> speciality;
-        problems.push_back({ name, speciality });
+        int duration;
+        inFile >> name >> speciality >> duration;
+        problems.push_back({ name, speciality, duration });
     }
 
     cout << "===" << endl;
-    int sizeDoctors = doctors.size();
+    int sizeDoctors;
     inFile >> sizeDoctors;
 
     for (int i = 0; i < sizeDoctors; i++)
     {
         string name;
         string speciality;
+        int timeForProblems = 8;
         inFile >> name >> speciality;
-        doctors.push_back({ name,speciality });
+        doctors.push_back({ name, speciality, timeForProblems });
     }
 
     solution1();
