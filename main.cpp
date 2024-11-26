@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <queue>
+#include <unordered_set>
 using namespace std;
 
 using namespace std;
@@ -13,6 +15,15 @@ public:
     string id;
     string speciality;
     int duration;
+    int priority;
+
+    bool operator<(const Problem &rhs)const
+    {
+        //return this->priority < rhs.priority;
+        if (priority == rhs.priority)
+            return duration > rhs.duration;
+        return priority < rhs.priority;
+    }
 };
 
 class Doctor
@@ -26,40 +37,97 @@ public:
 vector<Problem> problems;
 vector<Doctor> doctors;
 
-void solution1()
-{
-    vector<bool> resolved(problems.size(), false);
-    for (const auto& doctor : doctors)
-    {
-        int problemCount = 0;
-        int doctorTime = doctor.timeForProblems;
-        vector<Problem> problemeRezolvate;
 
-        for_each(problems.begin(), problems.end(), [&](const Problem& problem)
+void handsOn3()
+{
+    //vector<bool> resolved(problems.size(), false);
+    unordered_set<string> solvedProblems;
+        for (const auto& doctor : doctors)
+        {
+            int problemCount = 0;
+            int doctorTime = doctor.timeForProblems;
+
+            priority_queue<Problem> problemQueue;
+
+            for(const auto& problem: problems)
             {
-                auto index = &problem - &problems[0];
-                if (!resolved[index] && problem.speciality == doctor.speciality && problem.duration <= doctorTime)
+	            if(problem.speciality == doctor.speciality && solvedProblems.find(problem.id) == solvedProblems.end())
+	            {
+                    problemQueue.push(problem); // 4 1
+	            }
+            }
+
+            vector<Problem> solvedByThisDoc;
+
+
+            while (!problemQueue.empty() && doctorTime > 0)
+            {
+                Problem problem = problemQueue.top();
+
+                problemQueue.pop();
+
+                if(problem.duration <= doctorTime)
                 {
                     doctorTime -= problem.duration;
+                    solvedByThisDoc.push_back(problem);
                     problemCount++;
-                    problemeRezolvate.push_back(problem);
-                    resolved[index] = true;
+                    solvedProblems.insert(problem.id);
                 }
-            });
 
+            }
 
-        cout << doctor.id << " " << problemCount << " ";
-        for (auto& rezolvata : problemeRezolvate)
-        {
-            cout << rezolvata.id << " ";
+    
+		// afisare
+
+            if (problemCount > 0)
+            {
+                cout << doctor.id << " " << problemCount << " ";
+                for (auto& rezolvata : solvedByThisDoc)
+                {
+                    cout << rezolvata.id << " ";
+                }
+                cout << endl;
+            }
+
+            
         }
-        cout << endl;
-    }
 }
+
+//void solution1()
+//{
+//    vector<bool> resolved(problems.size(), false);
+//    for (const auto& doctor : doctors)
+//    {
+//        int problemCount = 0;
+//        int doctorTime = doctor.timeForProblems;
+//        vector<Problem> problemeRezolvate;
+//
+//        for_each(problems.begin(), problems.end(), [&](const Problem& problem)
+//            {
+//                auto index = &problem - &problems[0];
+//                if (!resolved[index] && problem.speciality == doctor.speciality && problem.duration <= doctorTime)
+//                {
+//                    doctorTime -= problem.duration;
+//                    problemCount++;
+//                    problemeRezolvate.push_back(problem);
+//                    resolved[index] = true;
+//                }
+//            });
+//
+//
+//        cout << doctor.id << " " << problemCount << " ";
+//        for (auto& rezolvata : problemeRezolvate)
+//        {
+//            cout << rezolvata.id << " ";
+//        }
+//        cout << endl;
+//    }
+//}
+
 
 int main()
 {
-    ifstream inFile("input4_bonus.txt");
+    ifstream inFile("input.txt");
 
     int sizeProblems;
     inFile >> sizeProblems;
@@ -69,8 +137,9 @@ int main()
         string name;
         string speciality;
         int duration;
-        inFile >> name >> speciality >> duration;
-        problems.push_back({ name, speciality, duration });
+        int priority;
+        inFile >> name >> speciality >> duration >> priority;
+        problems.push_back({ name, speciality, duration, priority });
     }
 
     cout << "===" << endl;
@@ -86,7 +155,8 @@ int main()
         doctors.push_back({ name, speciality, timeForProblems });
     }
 
-    solution1();
+     // solution1();
+    handsOn3();
 
     return 0;
 }
