@@ -5,6 +5,9 @@
 #include <algorithm>
 #include <queue>
 #include <unordered_set>
+#include <unordered_map>
+#include <map>
+#include <set>
 using namespace std;
 
 using namespace std;
@@ -14,15 +17,19 @@ class Problem
 public:
     string id;
     string speciality;
+    int arrivalHour;
     int duration;
     int priority;
 
-    bool operator<(const Problem &rhs)const
+    bool operator<(const Problem & other)const
     {
-        //return this->priority < rhs.priority;
-        if (priority == rhs.priority)
-            return duration > rhs.duration;
-        return priority < rhs.priority;
+        if (arrivalHour != other.arrivalHour)
+            return (arrivalHour > other.arrivalHour);
+
+        if (priority != other.priority)
+            return priority < other.priority;
+
+        return duration > other.duration;
     }
 };
 
@@ -30,133 +37,113 @@ class Doctor
 {
 public:
     string id;
-    string speciality;
-    int timeForProblems;
+    set<string> specialities;
+
+    int availableFromHour;
+
+    vector<Problem> solvedProblems;
 };
 
-vector<Problem> problems;
-vector<Doctor> doctors;
+const int hospitalOpenTime = 9;
+const int hospitalCloseTime = 17;
+// problems
+priority_queue<Problem> problemsQueue;
+// doctors
+map<string, Doctor> doctorsById;
+map<string, set<string>> doctorIdsBySpeciality;
 
 
-void handsOn3()
+void handsOn4()
 {
-    //vector<bool> resolved(problems.size(), false);
-    unordered_set<string> solvedProblems;
-        for (const auto& doctor : doctors)
-        {
-            int problemCount = 0;
-            int doctorTime = doctor.timeForProblems;
+    while (!problemsQueue.empty() )
+    {
+        Problem currentProblem = problemsQueue.top();
+        problemsQueue.pop();
 
-            priority_queue<Problem> problemQueue;
+        // find available doctor
+        const auto& doctorsIt = doctorIdsBySpeciality.find(currentProblem.speciality);
+        if (doctorsIt == doctorIdsBySpeciality.end())
+            continue;   // no doctor for this speciality
 
-            for(const auto& problem: problems)
-            {
-	            if(problem.speciality == doctor.speciality && solvedProblems.find(problem.id) == solvedProblems.end())
-	            {
-                    problemQueue.push(problem); // 4 1
-	            }
+        const set<string>& doctorIdsSet = doctorsIt->second;
+        
+        for (const string& doctorId : doctorIdsSet) {
+            Doctor& doctor = doctorsById[doctorId];
+
+            if (doctor.availableFromHour <= currentProblem.arrivalHour
+                && currentProblem.arrivalHour + currentProblem.duration <= hospitalCloseTime) {
+                // asign problem to doctor
+                doctor.availableFromHour = currentProblem.arrivalHour + currentProblem.duration;
+                doctor.solvedProblems.push_back(currentProblem);
+                break;
             }
-
-            vector<Problem> solvedByThisDoc;
-
-
-            while (!problemQueue.empty() && doctorTime > 0)
-            {
-                Problem problem = problemQueue.top();
-
-                problemQueue.pop();
-
-                if(problem.duration <= doctorTime)
-                {
-                    doctorTime -= problem.duration;
-                    solvedByThisDoc.push_back(problem);
-                    problemCount++;
-                    solvedProblems.insert(problem.id);
-                }
-
-            }
-
-    
-		// afisare
-
-            if (problemCount > 0)
-            {
-                cout << doctor.id << " " << problemCount << " ";
-                for (auto& rezolvata : solvedByThisDoc)
-                {
-                    cout << rezolvata.id << " ";
-                }
-                cout << endl;
-            }
-
-            
         }
+    }
+
+    // output
+    for (auto& doctorEntry : doctorsById) {
+        Doctor& doctor = doctorEntry.second;
+
+        if (doctor.solvedProblems.size() > 0) {
+            cout << doctor.id << " " << doctor.solvedProblems.size() << " ";
+
+            for (const Problem& problem : doctor.solvedProblems) {
+                cout << problem.id << " " << problem.arrivalHour << " ";
+            }
+            cout << endl;
+        }
+    }
 }
 
-//void solution1()
-//{
-//    vector<bool> resolved(problems.size(), false);
-//    for (const auto& doctor : doctors)
-//    {
-//        int problemCount = 0;
-//        int doctorTime = doctor.timeForProblems;
-//        vector<Problem> problemeRezolvate;
-//
-//        for_each(problems.begin(), problems.end(), [&](const Problem& problem)
-//            {
-//                auto index = &problem - &problems[0];
-//                if (!resolved[index] && problem.speciality == doctor.speciality && problem.duration <= doctorTime)
-//                {
-//                    doctorTime -= problem.duration;
-//                    problemCount++;
-//                    problemeRezolvate.push_back(problem);
-//                    resolved[index] = true;
-//                }
-//            });
-//
-//
-//        cout << doctor.id << " " << problemCount << " ";
-//        for (auto& rezolvata : problemeRezolvate)
-//        {
-//            cout << rezolvata.id << " ";
-//        }
-//        cout << endl;
-//    }
-//}
 
 
 int main()
 {
-    ifstream inFile("input.txt");
+    ifstream inFile("input2.txt");
+
+    if (!inFile) {
+        cerr << "Error: Could not open input file." << endl;
+        return 0;
+    }
 
     int sizeProblems;
     inFile >> sizeProblems;
 
+
     for (int i = 0; i < sizeProblems; i++)
     {
-        string name;
-        string speciality;
-        int duration;
-        int priority;
-        inFile >> name >> speciality >> duration >> priority;
-        problems.push_back({ name, speciality, duration, priority });
+        Problem problem;
+        inFile >> problem.id >> problem.speciality >> problem.arrivalHour >> problem.duration >> problem.priority;
+        problemsQueue.push(problem);
     }
 
     cout << "===" << endl;
     int sizeDoctors;
     inFile >> sizeDoctors;
 
+
     for (int i = 0; i < sizeDoctors; i++)
     {
-        string name;
-        string speciality;
-        int timeForProblems = 8;
-        inFile >> name >> speciality;
-        doctors.push_back({ name, speciality, timeForProblems });
+        Doctor doctor;
+        inFile >> doctor.id;
+
+        int specialitiesNum;
+        inFile >> specialitiesNum;
+
+        
+        for (int i = 0; i < specialitiesNum; i++) {
+            string speciality;
+            inFile >> speciality;
+            doctor.specialities.insert(speciality);
+            doctorIdsBySpeciality[speciality].insert(doctor.id);
+        }
+
+        doctor.availableFromHour = hospitalOpenTime;
+
+        doctorsById[doctor.id] = doctor;
     }
 
-     // solution1();
-    handsOn3();
+    handsOn4();
 
     return 0;
 }
