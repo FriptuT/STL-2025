@@ -99,7 +99,7 @@ void handsOn4()
 
 int main()
 {
-    ifstream inFile("input2.txt");
+    ifstream inFile("input4_bonus.txt");
 
     if (!inFile) {
         cerr << "Error: Could not open input file." << endl;
