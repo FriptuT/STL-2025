@@ -117,7 +117,6 @@ int main()
         problemsQueue.push(problem);
     }
 
-    cout << "===" << endl;
     int sizeDoctors;
     inFile >> sizeDoctors;
 
